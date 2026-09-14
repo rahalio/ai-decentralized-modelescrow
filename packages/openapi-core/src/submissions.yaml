@@ -1,0 +1,155 @@
+openapi: 3.1.0
+info:
+  title: Submissions API
+  version: 0.1.0
+  description: |
+    Model submission intake. Providers submit versioned artefacts; sealed contests
+    forbid raw dataset download (BR-4, BR-5).
+  license:
+    name: Proprietary
+    url: https://modelescrow.local/license
+  x-domain: sub
+servers:
+  - url: https://api.modelescrow.local
+security:
+  - apiKey: []
+  - bearerAuth: []
+tags:
+  - name: Submissions
+paths:
+  /v1/contests/{contestId}/submissions:
+    parameters:
+      - name: contestId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listSubmissions
+      tags: [Submissions]
+      summary: List submissions for a contest
+      x-repository: Submission
+      x-dynamodb:
+        entityType: "SUBMISSION"
+        pkPatternTemplate: "CONTEST#${contestId}"
+        skPatternTemplate: "SUBMISSION#${submissionId}"
+        pkPattern: "entity"
+        usePkQuery: true
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+        softDeleteEnabled: false
+        filterFields: ["status"]
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: status
+          in: query
+          schema:
+            $ref: ./submissions.schemas.yaml#/components/schemas/SubmissionStatus
+      responses:
+        '200':
+          description: Submissions page
+          content:
+            application/json:
+              schema:
+                $ref: ./submissions.schemas.yaml#/components/schemas/SubmissionListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: submitModel
+      tags: [Submissions]
+      summary: Submit a model package
+      x-repository: Submission
+      x-dynamodb:
+        entityType: "SUBMISSION"
+        pkPatternTemplate: "CONTEST#${contestId}"
+        skPatternTemplate: "SUBMISSION#${submissionId}"
+        pkPattern: "entity"
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./submissions.schemas.yaml#/components/schemas/SubmissionCreateRequest
+      responses:
+        '201':
+          description: Submission accepted
+          content:
+            application/json:
+              schema:
+                $ref: ./submissions.schemas.yaml#/components/schemas/SubmissionResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/submissions/{submissionId}:
+    parameters:
+      - name: submissionId
+        in: path
+        required: true
+        schema:
+          $ref: ./submissions.schemas.yaml#/components/schemas/SubmissionId
+    get:
+      operationId: getSubmission
+      tags: [Submissions]
+      summary: Get submission
+      x-repository: Submission
+      x-dynamodb:
+        entityType: "SUBMISSION"
+        pkPatternTemplate: "SUBMISSION#${submissionId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+      responses:
+        '200':
+          description: Submission
+          content:
+            application/json:
+              schema:
+                $ref: ./submissions.schemas.yaml#/components/schemas/SubmissionResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    delete:
+      operationId: withdrawSubmission
+      tags: [Submissions]
+      summary: Withdraw submission before evaluation starts
+      x-repository: Submission
+      x-dynamodb:
+        entityType: "SUBMISSION"
+        pkPatternTemplate: "SUBMISSION#${submissionId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '204':
+          description: Withdrawn
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

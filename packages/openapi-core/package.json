@@ -1,0 +1,18 @@
+{
+  "name": "@modelescrow/openapi-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenAPI contracts for Modelescrow (common + identity + product domains)",
+  "scripts": {
+    "lint:domains": "redocly lint",
+    "bundle:domains": "mkdir -p src/.bundled && redocly bundle identity --output src/.bundled/identity.openapi.yaml && redocly bundle identity --output src/.bundled/identity.json && redocly bundle contests --output src/.bundled/contests.openapi.yaml && redocly bundle contests --output src/.bundled/contests.json && redocly bundle submissions --output src/.bundled/submissions.openapi.yaml && redocly bundle submissions --output src/.bundled/submissions.json && redocly bundle evaluations --output src/.bundled/evaluations.openapi.yaml && redocly bundle evaluations --output src/.bundled/evaluations.json && redocly bundle escrows --output src/.bundled/escrows.openapi.yaml && redocly bundle escrows --output src/.bundled/escrows.json && redocly bundle settlements --output src/.bundled/settlements.openapi.yaml && redocly bundle settlements --output src/.bundled/settlements.json && redocly bundle disputes --output src/.bundled/disputes.openapi.yaml && redocly bundle disputes --output src/.bundled/disputes.json && redocly bundle deploygates --output src/.bundled/deploygates.openapi.yaml && redocly bundle deploygates --output src/.bundled/deploygates.json",
+    "lint": "pnpm run lint:domains",
+    "bundle": "pnpm run bundle:domains"
+  },
+  "devDependencies": {
+    "@redocly/cli": "^1.34.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

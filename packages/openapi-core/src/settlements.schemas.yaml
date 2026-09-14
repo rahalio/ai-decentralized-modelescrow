@@ -1,0 +1,84 @@
+openapi: 3.1.0
+info:
+  title: Settlements schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    SettlementId:
+      type: string
+      pattern: '^stl_[0-9A-HJKMNP-TV-Z]{26}$'
+
+    SettlementStatus:
+      type: string
+      enum: [pending, paid, returned, blocked_compliance]
+
+    Settlement:
+      type: object
+      required:
+        - settlementId
+        - contestId
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        settlementId:
+          $ref: '#/components/schemas/SettlementId'
+        contestId:
+          type: string
+        status:
+          $ref: '#/components/schemas/SettlementStatus'
+        winnerSubmissionId:
+          type: string
+        payoutReference:
+          type: string
+        complianceCleared:
+          type: boolean
+        takeRate:
+          type: number
+          format: float
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SettlementRequest:
+      type: object
+      required: [winnerSubmissionId]
+      properties:
+        winnerSubmissionId:
+          type: string
+        complianceCleared:
+          type: boolean
+          description: Dual-control clearance before payout (BR-10).
+
+    SettlementResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Settlement'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    SettlementListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Settlement'
+        nextCursor:
+          type: string
+
+    SettlementListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/SettlementListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

@@ -1,0 +1,215 @@
+openapi: 3.1.0
+info:
+  title: Contests API
+  version: 0.1.0
+  description: |
+    Contest publication and rules for Modelescrow. A contest must specify dataset
+    hash, evaluation function, acceptance metric, reward, and deadline before
+    escrow can lock (BR-1). Rules are immutable after fund lock.
+  license:
+    name: Proprietary
+    url: https://modelescrow.local/license
+  x-domain: cnt
+servers:
+  - url: https://api.modelescrow.local
+    description: Local / product API
+security:
+  - apiKey: []
+  - bearerAuth: []
+tags:
+  - name: Contests
+    description: Contest lifecycle and rules
+  - name: Audit
+    description: Attestation exports tying rules, scores, and payout refs (BR-12)
+paths:
+  /v1/contests:
+    get:
+      operationId: listContests
+      tags: [Contests]
+      summary: List contests
+      x-repository: Contest
+      x-dynamodb:
+        entityType: "CONTEST"
+        pkPatternTemplate: "CONTEST#${contestId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+        usePkQuery: false
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+        softDeleteEnabled: false
+        gsi1PKPatternTemplate: "CONTEST#STATUS#${status}"
+        gsi1SKPatternTemplate: "DEADLINE#${deadline}"
+        filterFields: ["status"]
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: status
+          in: query
+          schema:
+            $ref: ./contests.schemas.yaml#/components/schemas/ContestStatus
+      responses:
+        '200':
+          description: Contests page
+          content:
+            application/json:
+              schema:
+                $ref: ./contests.schemas.yaml#/components/schemas/ContestListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createContest
+      tags: [Contests]
+      summary: Create a draft contest
+      x-repository: Contest
+      x-dynamodb:
+        entityType: "CONTEST"
+        pkPatternTemplate: "CONTEST#${contestId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+        softDeleteEnabled: false
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./contests.schemas.yaml#/components/schemas/ContestCreateRequest
+      responses:
+        '201':
+          description: Contest created
+          content:
+            application/json:
+              schema:
+                $ref: ./contests.schemas.yaml#/components/schemas/ContestResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/contests/{contestId}:
+    parameters:
+      - name: contestId
+        in: path
+        required: true
+        schema:
+          $ref: ./contests.schemas.yaml#/components/schemas/ContestId
+    get:
+      operationId: getContest
+      tags: [Contests]
+      summary: Get contest
+      x-repository: Contest
+      x-dynamodb:
+        entityType: "CONTEST"
+        pkPatternTemplate: "CONTEST#${contestId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+      responses:
+        '200':
+          description: Contest
+          content:
+            application/json:
+              schema:
+                $ref: ./contests.schemas.yaml#/components/schemas/ContestResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    patch:
+      operationId: updateContest
+      tags: [Contests]
+      summary: Update draft contest rules (blocked after escrow lock)
+      x-repository: Contest
+      x-dynamodb:
+        entityType: "CONTEST"
+        pkPatternTemplate: "CONTEST#${contestId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+        updatedAtField: "updatedAt"
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./contests.schemas.yaml#/components/schemas/ContestUpdateRequest
+      responses:
+        '200':
+          description: Contest updated
+          content:
+            application/json:
+              schema:
+                $ref: ./contests.schemas.yaml#/components/schemas/ContestResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    delete:
+      operationId: cancelContest
+      tags: [Contests]
+      summary: Cancel a contest (pre-fund or per return rules)
+      x-repository: Contest
+      x-dynamodb:
+        entityType: "CONTEST"
+        pkPatternTemplate: "CONTEST#${contestId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '204':
+          description: Cancelled
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/audit/exports:
+    post:
+      operationId: createAuditExport
+      tags: [Audit]
+      summary: Generate attestation export for contests in a period (BR-12)
+      x-repository: none
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./contests.schemas.yaml#/components/schemas/AuditExportRequest
+      responses:
+        '202':
+          description: Export accepted
+          content:
+            application/json:
+              schema:
+                $ref: ./contests.schemas.yaml#/components/schemas/AuditExportResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

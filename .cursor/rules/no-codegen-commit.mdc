@@ -1,0 +1,12 @@
+---
+description: Never commit or push the .codegen directory
+alwaysApply: true
+---
+
+# Never commit `.codegen`
+
+The `.codegen/` directory holds local `zero-codegen` tooling. It must **never** be staged, committed, or pushed to GitHub (or any remote).
+
+- Do not `git add .codegen` or force-add ignored paths under `.codegen/`.
+- If asked to commit “everything”, exclude `.codegen/`.
+- On a fresh clone, obtain `.codegen` from `zero-apps-codegen-scaffold` (see README), then run `pnpm codegen:paths`.

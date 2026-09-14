@@ -1,0 +1,90 @@
+:root {
+  --color-ink: #e6edf2;
+  --color-slate-950: #0a1016;
+  --color-slate-900: #121a24;
+  --color-slate-800: #1a2430;
+  --color-slate-700: #2a3848;
+  --color-teal: #2ec4a2;
+  --color-teal-dim: #1a6b58;
+  --color-amber: #e0a045;
+  --color-coral: #e85d4c;
+  --color-steel: #7a93a8;
+  --color-brand: #9fd4c4;
+  --font-display: "IBM Plex Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --motion-lock: 200ms ease-out;
+  --motion-pass: 180ms ease-out;
+  --motion-deadline: 240ms ease-in-out;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-display);
+  color: var(--color-ink);
+  background:
+    radial-gradient(1200px 500px at 50% -10%, rgba(159, 212, 196, 0.08), transparent 60%),
+    linear-gradient(180deg, #0c131a 0%, var(--color-slate-950) 40%, #070b10 100%);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 23px,
+    rgba(42, 56, 72, 0.35) 24px
+  );
+  opacity: 0.35;
+  z-index: 0;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+a {
+  color: var(--color-brand);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-teal);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+code,
+.mono {
+  font-family: var(--font-mono);
+}

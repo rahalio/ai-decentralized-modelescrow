@@ -1,0 +1,161 @@
+openapi: 3.1.0
+info:
+  title: Disputes API
+  version: 0.1.0
+  description: |
+    Time-boxed evaluation disputes with evaluation-log evidence (BR-7).
+  license:
+    name: Proprietary
+    url: https://modelescrow.local/license
+  x-domain: dsp
+servers:
+  - url: https://api.modelescrow.local
+security:
+  - apiKey: []
+  - bearerAuth: []
+tags:
+  - name: Disputes
+paths:
+  /v1/disputes:
+    get:
+      operationId: listDisputes
+      tags: [Disputes]
+      summary: List disputes
+      x-repository: Dispute
+      x-dynamodb:
+        entityType: "DISPUTE"
+        pkPatternTemplate: "DISPUTE#${disputeId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+        filterFields: ["status"]
+        gsi1PKPatternTemplate: "DISPUTE#STATUS#${status}"
+        gsi1SKPatternTemplate: "DEADLINE#${deadline}"
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: status
+          in: query
+          schema:
+            $ref: ./disputes.schemas.yaml#/components/schemas/DisputeStatus
+        - name: contestId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Disputes page
+          content:
+            application/json:
+              schema:
+                $ref: ./disputes.schemas.yaml#/components/schemas/DisputeListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: openEvaluationDispute
+      tags: [Disputes]
+      summary: Open a time-boxed evaluation dispute
+      x-repository: Dispute
+      x-dynamodb:
+        entityType: "DISPUTE"
+        pkPatternTemplate: "DISPUTE#${disputeId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./disputes.schemas.yaml#/components/schemas/DisputeCreateRequest
+      responses:
+        '201':
+          description: Dispute opened
+          content:
+            application/json:
+              schema:
+                $ref: ./disputes.schemas.yaml#/components/schemas/DisputeResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/disputes/{disputeId}:
+    parameters:
+      - name: disputeId
+        in: path
+        required: true
+        schema:
+          $ref: ./disputes.schemas.yaml#/components/schemas/DisputeId
+    get:
+      operationId: getDispute
+      tags: [Disputes]
+      summary: Get dispute
+      x-repository: Dispute
+      x-dynamodb:
+        entityType: "DISPUTE"
+        pkPatternTemplate: "DISPUTE#${disputeId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+      responses:
+        '200':
+          description: Dispute
+          content:
+            application/json:
+              schema:
+                $ref: ./disputes.schemas.yaml#/components/schemas/DisputeResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: resolveDispute
+      tags: [Disputes]
+      summary: Resolve or reject a dispute
+      x-repository: Dispute
+      x-dynamodb:
+        entityType: "DISPUTE"
+        pkPatternTemplate: "DISPUTE#${disputeId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+        updatedAtField: "updatedAt"
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./disputes.schemas.yaml#/components/schemas/DisputeResolveRequest
+      responses:
+        '200':
+          description: Dispute resolved
+          content:
+            application/json:
+              schema:
+                $ref: ./disputes.schemas.yaml#/components/schemas/DisputeResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

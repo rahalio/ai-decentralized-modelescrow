@@ -1,0 +1,126 @@
+openapi: 3.1.0
+info:
+  title: Escrows API
+  version: 0.1.0
+  description: |
+    Escrow lock and status. Rewards release only on evaluation pass or return on
+    expiry/cancel per rules (BR-2). Take-rate is disclosed separately (BR-8).
+  license:
+    name: Proprietary
+    url: https://modelescrow.local/license
+  x-domain: esc
+servers:
+  - url: https://api.modelescrow.local
+security:
+  - apiKey: []
+  - bearerAuth: []
+tags:
+  - name: Escrows
+paths:
+  /v1/contests/{contestId}/escrow:
+    parameters:
+      - name: contestId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getEscrow
+      tags: [Escrows]
+      summary: Get escrow for contest
+      x-repository: Escrow
+      x-dynamodb:
+        entityType: "ESCROW"
+        pkPatternTemplate: "CONTEST#${contestId}"
+        skPatternTemplate: "ESCROW"
+        pkPattern: "entity"
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+      responses:
+        '200':
+          description: Escrow
+          content:
+            application/json:
+              schema:
+                $ref: ./escrows.schemas.yaml#/components/schemas/EscrowResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: lockEscrow
+      tags: [Escrows]
+      summary: Lock escrow after contest rules are complete (BR-1, BR-2)
+      x-repository: Escrow
+      x-dynamodb:
+        entityType: "ESCROW"
+        pkPatternTemplate: "CONTEST#${contestId}"
+        skPatternTemplate: "ESCROW"
+        pkPattern: "entity"
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./escrows.schemas.yaml#/components/schemas/EscrowLockRequest
+      responses:
+        '201':
+          description: Escrow locked
+          content:
+            application/json:
+              schema:
+                $ref: ./escrows.schemas.yaml#/components/schemas/EscrowResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/escrows/{escrowId}:
+    parameters:
+      - name: escrowId
+        in: path
+        required: true
+        schema:
+          $ref: ./escrows.schemas.yaml#/components/schemas/EscrowId
+    get:
+      operationId: getEscrowById
+      tags: [Escrows]
+      summary: Get escrow by id
+      x-repository: Escrow
+      x-dynamodb:
+        entityType: "ESCROW"
+        pkPatternTemplate: "ESCROW#${escrowId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+      responses:
+        '200':
+          description: Escrow
+          content:
+            application/json:
+              schema:
+                $ref: ./escrows.schemas.yaml#/components/schemas/EscrowResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

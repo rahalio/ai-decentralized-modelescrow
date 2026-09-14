@@ -100,10 +100,10 @@ flowchart TD
 - **Leading:** escrow funded rate; median time to first valid submission; evaluation reproducibility checks passed.
 - **Lagging:** dispute rate; verified metric lift on requester holdout; provider repeat participation; take-rate vs centralised marketplaces.
 
-## OpenAPI skeleton
+## OpenAPI
 
-Canonical HTTP surface lives in sibling [openapi.yaml](openapi.yaml). Summary:
+Canonical HTTP surface lives under [`packages/openapi-core/src/`](packages/openapi-core/src/) (one YAML per domain). Summary:
 
-- **Base path:** `/v1/...`
-- **Auth:** API key / Bearer JWT.
-- **Resource groups:** Contests, Submissions, Evaluations, Escrows, Settlements.
+- **Base path:** `/v1/...` (identity blueprint remains `/v0/...`)
+- **Auth:** API key / Bearer JWT
+- **Domains:** Contests, Submissions, Evaluations, Escrows, Settlements, Disputes, DeployGates (+ Identity)

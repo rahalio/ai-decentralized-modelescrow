@@ -1,0 +1,94 @@
+openapi: 3.1.0
+info:
+  title: Submissions schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    SubmissionId:
+      type: string
+      pattern: '^sub_[0-9A-HJKMNP-TV-Z]{26}$'
+
+    SubmissionStatus:
+      type: string
+      enum: [received, evaluating, scored, invalid, withdrawn]
+
+    Submission:
+      type: object
+      required:
+        - submissionId
+        - contestId
+        - providerId
+        - artefactUri
+        - artefactHash
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        submissionId:
+          $ref: '#/components/schemas/SubmissionId'
+        contestId:
+          type: string
+        providerId:
+          type: string
+        artefactUri:
+          type: string
+          format: uri
+          description: Versioned model package URI suitable for microservice deploy (BR-5).
+        artefactHash:
+          type: string
+        artefactVersion:
+          type: string
+        licenseAttestation:
+          type: string
+        status:
+          $ref: '#/components/schemas/SubmissionStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SubmissionCreateRequest:
+      type: object
+      required: [artefactUri, artefactHash]
+      properties:
+        artefactUri:
+          type: string
+          format: uri
+        artefactHash:
+          type: string
+        artefactVersion:
+          type: string
+        licenseAttestation:
+          type: string
+
+    SubmissionListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Submission'
+        nextCursor:
+          type: string
+
+    SubmissionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Submission'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    SubmissionListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/SubmissionListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

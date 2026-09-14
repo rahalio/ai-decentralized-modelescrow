@@ -1,0 +1,91 @@
+openapi: 3.1.0
+info:
+  title: Deploygates schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    DeployGateId:
+      type: string
+      pattern: '^dgt_[0-9A-HJKMNP-TV-Z]{26}$'
+
+    DeployGateStatus:
+      type: string
+      enum: [pending_review, approved, held]
+
+    DeployGate:
+      type: object
+      required:
+        - deployGateId
+        - contestId
+        - submissionId
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        deployGateId:
+          $ref: '#/components/schemas/DeployGateId'
+        contestId:
+          type: string
+        submissionId:
+          type: string
+        status:
+          $ref: '#/components/schemas/DeployGateStatus'
+        metricPass:
+          type: boolean
+        holdReason:
+          type: string
+        registryWebhookUri:
+          type: string
+          format: uri
+        promotedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DeployGateDecisionRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [approve, hold]
+        holdReason:
+          type: string
+        registryWebhookUri:
+          type: string
+          format: uri
+
+    DeployGateResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/DeployGate'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    DeployGateListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeployGate'
+        nextCursor:
+          type: string
+
+    DeployGateListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/DeployGateListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

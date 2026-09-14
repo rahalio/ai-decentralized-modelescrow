@@ -1,0 +1,230 @@
+openapi: 3.1.0
+info:
+  title: Contests schemas
+  version: 0.1.0
+  description: Contest entities and envelopes for Modelescrow.
+paths: {}
+components:
+  schemas:
+    ContestId:
+      type: string
+      pattern: '^cnt_[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Prefixed contest id.
+
+    ContestStatus:
+      type: string
+      enum: [draft, funded, open, evaluating, settled, cancelled]
+
+    Contest:
+      type: object
+      required:
+        - contestId
+        - title
+        - status
+        - datasetHash
+        - evaluationFunction
+        - metricName
+        - rewardAmount
+        - deadline
+        - createdAt
+        - updatedAt
+      properties:
+        contestId:
+          $ref: '#/components/schemas/ContestId'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        status:
+          $ref: '#/components/schemas/ContestStatus'
+        datasetId:
+          type: string
+          description: Optional catalogue identifier for the dataset.
+        datasetHash:
+          type: string
+          description: Content hash of the evaluation dataset (BR-1).
+        evaluationFunction:
+          type: string
+          description: Published evaluation function / metric pipeline id.
+        metricName:
+          type: string
+        acceptanceThreshold:
+          type: number
+          format: float
+          description: Optional minimum score to win.
+        sealedEvaluation:
+          type: boolean
+          default: false
+          description: When true, providers do not receive raw dataset download (BR-4).
+        leaderboardVisibility:
+          type: string
+          enum: [public, private]
+          default: public
+        rewardAmount:
+          type: number
+          format: double
+        rewardCurrency:
+          type: string
+          default: USD
+        takeRate:
+          type: number
+          format: float
+          description: Platform take-rate disclosed separately from reward (BR-8).
+        deadline:
+          type: string
+          format: date-time
+        requireHumanDeployGate:
+          type: boolean
+          default: false
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ContestCreateRequest:
+      type: object
+      required:
+        - title
+        - datasetHash
+        - evaluationFunction
+        - metricName
+        - rewardAmount
+        - deadline
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        datasetId:
+          type: string
+        datasetHash:
+          type: string
+        evaluationFunction:
+          type: string
+        metricName:
+          type: string
+        acceptanceThreshold:
+          type: number
+          format: float
+        sealedEvaluation:
+          type: boolean
+        leaderboardVisibility:
+          type: string
+          enum: [public, private]
+        rewardAmount:
+          type: number
+          format: double
+        rewardCurrency:
+          type: string
+        takeRate:
+          type: number
+          format: float
+        deadline:
+          type: string
+          format: date-time
+        requireHumanDeployGate:
+          type: boolean
+
+    ContestUpdateRequest:
+      type: object
+      description: Allowed only while status is draft (pre-escrow).
+      properties:
+        title:
+          type: string
+        datasetId:
+          type: string
+        datasetHash:
+          type: string
+        evaluationFunction:
+          type: string
+        metricName:
+          type: string
+        acceptanceThreshold:
+          type: number
+          format: float
+        sealedEvaluation:
+          type: boolean
+        leaderboardVisibility:
+          type: string
+          enum: [public, private]
+        rewardAmount:
+          type: number
+          format: double
+        rewardCurrency:
+          type: string
+        takeRate:
+          type: number
+          format: float
+        deadline:
+          type: string
+          format: date-time
+        requireHumanDeployGate:
+          type: boolean
+
+    ContestListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contest'
+        nextCursor:
+          type: string
+
+    ContestResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Contest'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    ContestListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ContestListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    AuditExportRequest:
+      type: object
+      required: [from, to]
+      properties:
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        contestIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContestId'
+
+    AuditExport:
+      type: object
+      required: [exportId, downloadUri, createdAt]
+      properties:
+        exportId:
+          type: string
+        downloadUri:
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+
+    AuditExportResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AuditExport'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

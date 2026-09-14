@@ -1,0 +1,167 @@
+openapi: 3.1.0
+info:
+  title: Deploygates API
+  version: 0.1.0
+  description: |
+    Optional human-in-the-loop review before production promotion after metric win (BR-6).
+  license:
+    name: Proprietary
+    url: https://modelescrow.local/license
+  x-domain: dgt
+servers:
+  - url: https://api.modelescrow.local
+security:
+  - apiKey: []
+  - bearerAuth: []
+tags:
+  - name: DeployGates
+paths:
+  /v1/contests/{contestId}/deploy-gates:
+    parameters:
+      - name: contestId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listDeployGates
+      tags: [DeployGates]
+      summary: List deploy gates for a contest
+      x-repository: DeployGate
+      x-dynamodb:
+        entityType: "DEPLOY_GATE"
+        pkPatternTemplate: "CONTEST#${contestId}"
+        skPatternTemplate: "DEPLOYGATE#${deployGateId}"
+        pkPattern: "entity"
+        usePkQuery: true
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+        filterFields: ["status"]
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: status
+          in: query
+          schema:
+            $ref: ./deploygates.schemas.yaml#/components/schemas/DeployGateStatus
+      responses:
+        '200':
+          description: Deploy gates
+          content:
+            application/json:
+              schema:
+                $ref: ./deploygates.schemas.yaml#/components/schemas/DeployGateListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createDeployGate
+      tags: [DeployGates]
+      summary: Open a deploy gate for a winning submission
+      x-repository: DeployGate
+      x-dynamodb:
+        entityType: "DEPLOY_GATE"
+        pkPatternTemplate: "CONTEST#${contestId}"
+        skPatternTemplate: "DEPLOYGATE#${deployGateId}"
+        pkPattern: "entity"
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [submissionId]
+              properties:
+                submissionId:
+                  type: string
+                registryWebhookUri:
+                  type: string
+                  format: uri
+      responses:
+        '201':
+          description: Deploy gate created
+          content:
+            application/json:
+              schema:
+                $ref: ./deploygates.schemas.yaml#/components/schemas/DeployGateResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/deploy-gates/{deployGateId}:
+    parameters:
+      - name: deployGateId
+        in: path
+        required: true
+        schema:
+          $ref: ./deploygates.schemas.yaml#/components/schemas/DeployGateId
+    get:
+      operationId: getDeployGate
+      tags: [DeployGates]
+      summary: Get deploy gate
+      x-repository: DeployGate
+      x-dynamodb:
+        entityType: "DEPLOY_GATE"
+        pkPatternTemplate: "DEPLOYGATE#${deployGateId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+      responses:
+        '200':
+          description: Deploy gate
+          content:
+            application/json:
+              schema:
+                $ref: ./deploygates.schemas.yaml#/components/schemas/DeployGateResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: decideDeployGate
+      tags: [DeployGates]
+      summary: Approve promote or hold for gaming review
+      x-repository: DeployGate
+      x-dynamodb:
+        entityType: "DEPLOY_GATE"
+        pkPatternTemplate: "DEPLOYGATE#${deployGateId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+        updatedAtField: "updatedAt"
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./deploygates.schemas.yaml#/components/schemas/DeployGateDecisionRequest
+      responses:
+        '200':
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: ./deploygates.schemas.yaml#/components/schemas/DeployGateResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

@@ -1,0 +1,111 @@
+openapi: 3.1.0
+info:
+  title: Disputes schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    DisputeId:
+      type: string
+      pattern: '^dsp_[0-9A-HJKMNP-TV-Z]{26}$'
+
+    DisputeStatus:
+      type: string
+      enum: [open, resolved, rejected, expired]
+
+    Dispute:
+      type: object
+      required:
+        - disputeId
+        - contestId
+        - submissionId
+        - status
+        - claim
+        - deadline
+        - createdAt
+        - updatedAt
+      properties:
+        disputeId:
+          $ref: '#/components/schemas/DisputeId'
+        contestId:
+          type: string
+        submissionId:
+          type: string
+        evaluationRunId:
+          type: string
+        status:
+          $ref: '#/components/schemas/DisputeStatus'
+        claim:
+          type: string
+        evidenceUri:
+          type: string
+          format: uri
+        resolutionNote:
+          type: string
+        deadline:
+          type: string
+          format: date-time
+          description: Time-box for adjudication (BR-7).
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DisputeCreateRequest:
+      type: object
+      required: [contestId, submissionId, claim]
+      properties:
+        contestId:
+          type: string
+        submissionId:
+          type: string
+        evaluationRunId:
+          type: string
+        claim:
+          type: string
+          minLength: 1
+        evidenceUri:
+          type: string
+          format: uri
+
+    DisputeResolveRequest:
+      type: object
+      required: [status, resolutionNote]
+      properties:
+        status:
+          type: string
+          enum: [resolved, rejected]
+        resolutionNote:
+          type: string
+          minLength: 1
+
+    DisputeResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Dispute'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    DisputeListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Dispute'
+        nextCursor:
+          type: string
+
+    DisputeListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/DisputeListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

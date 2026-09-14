@@ -1,0 +1,123 @@
+openapi: 3.1.0
+info:
+  title: Settlements API
+  version: 0.1.0
+  description: |
+    Payout settlement after evaluation pass and compliance clearance (BR-2, BR-10).
+  license:
+    name: Proprietary
+    url: https://modelescrow.local/license
+  x-domain: stl
+servers:
+  - url: https://api.modelescrow.local
+security:
+  - apiKey: []
+  - bearerAuth: []
+tags:
+  - name: Settlements
+paths:
+  /v1/contests/{contestId}/settlement:
+    parameters:
+      - name: contestId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getSettlement
+      tags: [Settlements]
+      summary: Get settlement for contest
+      x-repository: Settlement
+      x-dynamodb:
+        entityType: "SETTLEMENT"
+        pkPatternTemplate: "CONTEST#${contestId}"
+        skPatternTemplate: "SETTLEMENT"
+        pkPattern: "entity"
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+      responses:
+        '200':
+          description: Settlement
+          content:
+            application/json:
+              schema:
+                $ref: ./settlements.schemas.yaml#/components/schemas/SettlementResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: settleContest
+      tags: [Settlements]
+      summary: Settle contest payout or return
+      x-repository: Settlement
+      x-dynamodb:
+        entityType: "SETTLEMENT"
+        pkPatternTemplate: "CONTEST#${contestId}"
+        skPatternTemplate: "SETTLEMENT"
+        pkPattern: "entity"
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./settlements.schemas.yaml#/components/schemas/SettlementRequest
+      responses:
+        '202':
+          description: Settlement accepted
+          content:
+            application/json:
+              schema:
+                $ref: ./settlements.schemas.yaml#/components/schemas/SettlementResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/settlements:
+    get:
+      operationId: listSettlements
+      tags: [Settlements]
+      summary: List settlements
+      x-repository: Settlement
+      x-dynamodb:
+        entityType: "SETTLEMENT"
+        pkPatternTemplate: "SETTLEMENT#${settlementId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+        filterFields: ["status"]
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: status
+          in: query
+          schema:
+            $ref: ./settlements.schemas.yaml#/components/schemas/SettlementStatus
+      responses:
+        '200':
+          description: Settlements page
+          content:
+            application/json:
+              schema:
+                $ref: ./settlements.schemas.yaml#/components/schemas/SettlementListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

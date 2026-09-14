@@ -1,0 +1,78 @@
+openapi: 3.1.0
+info:
+  title: Escrows schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    EscrowId:
+      type: string
+      pattern: '^esc_[0-9A-HJKMNP-TV-Z]{26}$'
+
+    EscrowStatus:
+      type: string
+      enum: [draft, locked, released, returned]
+
+    Escrow:
+      type: object
+      required:
+        - escrowId
+        - contestId
+        - status
+        - amount
+        - currency
+        - takeRate
+        - createdAt
+        - updatedAt
+      properties:
+        escrowId:
+          $ref: '#/components/schemas/EscrowId'
+        contestId:
+          type: string
+        status:
+          $ref: '#/components/schemas/EscrowStatus'
+        amount:
+          type: number
+          format: double
+          description: Escrowed reward (excludes take-rate).
+        currency:
+          type: string
+        takeRate:
+          type: number
+          format: float
+          description: Disclosed platform fee separate from reward (BR-8).
+        takeAmount:
+          type: number
+          format: double
+        railReference:
+          type: string
+        releaseConditions:
+          type: string
+          description: Human-readable release rules snapshot.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    EscrowLockRequest:
+      type: object
+      required: [amount, currency]
+      properties:
+        amount:
+          type: number
+          format: double
+        currency:
+          type: string
+        railReference:
+          type: string
+
+    EscrowResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Escrow'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

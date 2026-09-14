@@ -1,0 +1,179 @@
+openapi: 3.1.0
+info:
+  title: Evaluations API
+  version: 0.1.0
+  description: |
+    Independent evaluation runs and leaderboards. Scores are reproducible from
+    recorded environment and metric definitions; operators cannot silently change
+    scores post hoc (BR-3).
+  license:
+    name: Proprietary
+    url: https://modelescrow.local/license
+  x-domain: evl
+servers:
+  - url: https://api.modelescrow.local
+security:
+  - apiKey: []
+  - bearerAuth: []
+tags:
+  - name: Evaluations
+paths:
+  /v1/submissions/{submissionId}/evaluations:
+    parameters:
+      - name: submissionId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listEvaluationsForSubmission
+      tags: [Evaluations]
+      summary: List evaluation runs for a submission
+      x-repository: EvaluationRun
+      x-dynamodb:
+        entityType: "EVALUATION_RUN"
+        pkPatternTemplate: "SUBMISSION#${submissionId}"
+        skPatternTemplate: "EVAL#${evaluationRunId}"
+        pkPattern: "entity"
+        usePkQuery: true
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Evaluation runs
+          content:
+            application/json:
+              schema:
+                $ref: ./evaluations.schemas.yaml#/components/schemas/EvaluationRunListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: runEvaluation
+      tags: [Evaluations]
+      summary: Start an evaluation run
+      x-repository: EvaluationRun
+      x-dynamodb:
+        entityType: "EVALUATION_RUN"
+        pkPatternTemplate: "SUBMISSION#${submissionId}"
+        skPatternTemplate: "EVAL#${evaluationRunId}"
+        pkPattern: "entity"
+        createdAtField: "createdAt"
+        updatedAtField: "updatedAt"
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      responses:
+        '202':
+          description: Evaluation started
+          content:
+            application/json:
+              schema:
+                $ref: ./evaluations.schemas.yaml#/components/schemas/EvaluationRunResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/evaluations/{evaluationRunId}:
+    parameters:
+      - name: evaluationRunId
+        in: path
+        required: true
+        schema:
+          $ref: ./evaluations.schemas.yaml#/components/schemas/EvaluationRunId
+    get:
+      operationId: getEvaluationRun
+      tags: [Evaluations]
+      summary: Get evaluation run evidence
+      x-repository: EvaluationRun
+      x-dynamodb:
+        entityType: "EVALUATION_RUN"
+        pkPatternTemplate: "EVAL#${evaluationRunId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: "entity"
+      responses:
+        '200':
+          description: Evaluation run
+          content:
+            application/json:
+              schema:
+                $ref: ./evaluations.schemas.yaml#/components/schemas/EvaluationRunResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/evaluations/{evaluationRunId}/invalidate:
+    parameters:
+      - name: evaluationRunId
+        in: path
+        required: true
+        schema:
+          $ref: ./evaluations.schemas.yaml#/components/schemas/EvaluationRunId
+    post:
+      operationId: invalidateEvaluationRun
+      tags: [Evaluations]
+      summary: Mark evaluation invalid with reason (ops; creates audit trail)
+      x-repository: EvaluationRun
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./evaluations.schemas.yaml#/components/schemas/InvalidateEvaluationRequest
+      responses:
+        '200':
+          description: Invalidated
+          content:
+            application/json:
+              schema:
+                $ref: ./evaluations.schemas.yaml#/components/schemas/EvaluationRunResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/contests/{contestId}/leaderboard:
+    parameters:
+      - name: contestId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getLeaderboard
+      tags: [Evaluations]
+      summary: Get contest leaderboard
+      x-repository: none
+      responses:
+        '200':
+          description: Leaderboard
+          content:
+            application/json:
+              schema:
+                $ref: ./evaluations.schemas.yaml#/components/schemas/LeaderboardResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

@@ -1,0 +1,131 @@
+openapi: 3.1.0
+info:
+  title: Evaluations schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    EvaluationRunId:
+      type: string
+      pattern: '^evr_[0-9A-HJKMNP-TV-Z]{26}$'
+
+    EvaluationRunStatus:
+      type: string
+      enum: [queued, running, completed, failed, invalidated]
+
+    EvaluationRun:
+      type: object
+      required:
+        - evaluationRunId
+        - submissionId
+        - contestId
+        - status
+        - metricName
+        - createdAt
+        - updatedAt
+      properties:
+        evaluationRunId:
+          $ref: '#/components/schemas/EvaluationRunId'
+        submissionId:
+          type: string
+        contestId:
+          type: string
+        status:
+          $ref: '#/components/schemas/EvaluationRunStatus'
+        score:
+          type: number
+          format: float
+        metricName:
+          type: string
+          description: Frozen metric definition snapshot (BR-3).
+        environmentHash:
+          type: string
+          description: Evaluation environment fingerprint for reproducibility.
+        logHash:
+          type: string
+        logExcerpt:
+          type: string
+        invalidationReason:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    LeaderboardEntry:
+      type: object
+      required: [submissionId, providerId, score, rank]
+      properties:
+        submissionId:
+          type: string
+        providerId:
+          type: string
+        score:
+          type: number
+          format: float
+        rank:
+          type: integer
+        evaluationRunId:
+          type: string
+
+    Leaderboard:
+      type: object
+      required: [contestId, entries]
+      properties:
+        contestId:
+          type: string
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeaderboardEntry'
+        visibility:
+          type: string
+          enum: [public, private]
+
+    InvalidateEvaluationRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+
+    EvaluationRunResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/EvaluationRun'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    LeaderboardResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Leaderboard'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    EvaluationRunListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvaluationRun'
+        nextCursor:
+          type: string
+
+    EvaluationRunListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/EvaluationRunListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
